@@ -1,0 +1,227 @@
+使用MySOL
+    show databases         #显示所有的数据库
+    use databaseName       #选择数据库
+    show tables            #显示所在数据库内的所有表
+    shwo columns from tableName     #显示所tableName表的所有列（字段）,具体情况
+        与describe tableName 效果一样，但这为mysql专有
+    show grants            #显示授予用户的安全权限
+
+检索数据                    mysql 字母不区分有小写
+    select                 #必须给出两条信息：想选择什么，从什么地方选择
+        select colName1,colName2 from tableName;      #需要检索多列（多字段）就用逗号隔开，如果需要检索所有可以用*号代替
+        select distinct colName1 from tableName;      #distinct（必须放在列名前）可以检索出不同的行，只返回不同的值
+                                                      #distinct 必须应用于所有的列前而不仅是前置它的列前。(多列要都不同，否则所有的行都将被检所出来)
+        select colName from tableName limit Num;     #limit限制检索返回的结果行数，不多于Num行。
+        select colName from tableName limit Num1,Num2;     # 检所出来的第一行为行0，而不是行1.从行Num1（序列号，起始位置）开始的Num2（数量）行                                            
+              select colName from tableName limit Num2 offset Num1;   #从行Num1 起，取Num2行
+                                                    #检索的行数不够时，将只返回它能返回的那么多行。  
+                tableName.colName      #列名，完全限定的列名的写法 . 的
+                databaseName.tableName #表名，完全限定有表名的写法 
+
+排序检索数据
+    order by     #子句 取一个或多个列的名子，据此对输出进行排序
+    select colName from tableName order by colName;    #对colName列以字母顺序排序
+    select colName1,colName2,colName3 from tableName order by colName1,colName2;  
+                        #首先按colName1排序，然后再按colName2排序。（即colName1排后，有多项具有相同colName1值的，就按colName2排，唯一的，则不会安colName2排序）
+    select colName1,colName2 from tableName order by colName1 desc；   #desc表示按colName1进行  降序  排序（从大到小）
+                                                                    #asc 默认是升序排序(从小到大)  排序方式 可以分别 加在每一项排序后面
+                                                                    #mysql 文本排序，黑夜A与a 相同。如果要区分有小写，需要修改数据库的设置，用这order by 做不到的。
+    select colName from tableName order by colName desc limit 1;     #利用order by desc 降序排序，取1行，就可以找到最大的行                                                                
+
+过滤数据
+    where 子句 用来 指定搜索条件
+    如果 同时使用 order by 和 where 子句时，应该让 order by 位于where 之后，否则 会产生错误
+    where 子句操作符
+             =     (等于)          <=             (小于等于)
+            <>     (不等于)         >             (大于)
+            !=     (不等于)         >=            (大于等于)
+            <      (小于)           between       在指定的两个值之间(需要用 and 关键词 来指定开始的值num1和结束的值num2)
+    select colName from tableName where colName between num1 and num2
+    NULL 无值，与字段包含0，空字符串或仅仅包含空格不同。 select有特殊的where 子句is null 来检索
+    select colName from tableName where is null;
+
+数据过滤
+    mysql允许给出多个where子句，以 and 或 or 的方式使用。and or 用来联结 或改变where子句的子句的关键字，也称逻辑操作符
+    and 用在where子句中的关键字，用来指示检索满足所有给定的条件的行，可以添加多组过虑条件，每添加一条就要使用一个and
+    or  指示mysql检索匹配任一条件的行
+    and 的优先级高于 or 因此，当and or 混合使用要注意，可以使用（）来提升优先级
+    select colName1,colName1 from where (colName1=num1 or colName1=num2) and colName2 >=num3;
+    如果没有加（）,系统会默认成为这样子：select colName1,colName1 from where colName1=num1 or （ colName1=num2 and colName2 >=num3）;
+    当有and 和 or 建议要使用（）明确的分组操作符,同时消除歧义，不要过分依赖默认计算次序。
+    in操作符用来指定条件范围，范围中的每个条件都可以进行匹配。in取合法值由逗号分隔的清单，全部在圆括号中
+    select colName from tableName where colName in (num1,num2) order by colName；
+    in 与or 功能差不多，但in更清晰直观，计算次数容易管理，速度比or快
+    not 操作符，否定它被后所跟的任何条件
+        select colName from tableName where colName not in (num1,num2) order by colName;
+        mysql 支持，用not 对 in,between,exists子句取反 （这与其他数据库有很大差别）
+
+用通配符进行过滤   （注意mysql的配置方式，是否是区分大小写，还是不论大小写）
+    通配符 用来匹配值的一部分特殊字符。本身实际是SQL的where子句中的特殊含义的字符，sql支持几种通配符
+    在搜索子句中使用通配符，必须使用like操作符。当操作符作为谓词时，从技术上说，like是谓词不是操作符，最终结果相同，应了解此术语。
+    
+    % 百分号通配符：表示 任何字符 出现 任意次数
+    select colName from tableName where colName like 'str%';  意思为搜出str开头的就行，后面的任意字符，不管它有多少个字符。
+    通配符，可以多个使用，可以在任意位置中使用     
+            %str%   这是位于模式的两端,表示匹配任何位置包含文本str的值，而不论它之前或之后出现什么字符
+            s%r     表示找出以s起头以e结尾的所有产品
+    注意尾空格 可能会干拢通配符匹配。
+    %    不匹配NULL
+
+    _ 下划线通配符 ，用符和%一样，只匹配单个字符而不是多个字符。就匹配一个字符，不能多也不能少
+    tips：1，不要过度使用通配符。2，不要在搜索模式的开始处使用，3，不要放错位置
+
+正则表达式进行搜索       mysql仅支持正则表达式实现的一个很小的子集
+    正则表达式是用来匹配文本的特殊串（字符集合)
+    select colName from tableName where prod_name REGEXP 'str' order by colName;
+    like 被 regexp替代
+    select colName from tableName where prod_name REGEXP '.str' order by colName;
+    .是正则表达式语言中一个特殊的字符。它表示匹配任意一个字符。
+
+    mysql regexp默认不区分大小写，  为了区分大小写，可以用binary ,即regexp binary 'str';
+
+    select colName from tableName where colName regexp 'str1|str2'
+    | 为正则的or操作符，它表示匹配其中之一。可以多个一起使用。
+    select colName from tableName where colName regexp '[abc]str'
+    [] 匹配几个字符被一  如[123]str表示要匹配123之中的任意一个(1str,2str,3str,三种可能而已)。
+                        [123]str   等于 [1|2|3]str  这里的中括号不能少，中括号是用来定义or语句查什么
+                                        1|2|3 str  mysql会认为是1或2或3 str 这样来检索。
+    匹配范围
+        集合可以用来定义要匹配的一个或多个字符。
+            [123456789] 表示将匹配数字0到9  可以用 - 来定义一个范围 [0-9]
+            [1-3]  [6-9]  [a-z] 这些都是合法的 （仅匹配一个）
+    匹配特殊字符  [] | . -      => \\[    \\|   \\.  \\-
+    多数正则表达式实现使用单个反斜杠转义特殊字符，以便能使用这些字符本身。但MySQL要求两个反斜杠
+    （Mysql自己解释一个，正则表达式库解释另一个）
+    元字符      \\f   换页
+               \\n   换行
+               \\r   回车
+               \\t   制表
+               \\v   纵向制表
+
+    匹配字符类 
+            [:alnum:]   任意字母和数字（同[a-zA-Z0-9])
+            [:alpha:]   任意字符  （同[a-zA-Z])
+            [:blank:]   空格和制表 （同[\\t])
+            [:cntrl:]   ASCII控制字符（ASCII 0到31和127）
+            [:digit:]   任意数字（同[0-9])
+            [:graph:]   与[:print:]相同，但不包括空格
+            [:lower:]   任意小写字母（同[a-z])
+            [:print:]   任意可以打印字符
+            [:punct:]   既不在[:alnum:]又不在[:cntrl:]中的任意字符
+            [:space:]   包括空格在内的任意空白字符(同[\\f\\n\\r\\t\\v])
+            [:upper:]   任意大写字母（同[A-Z])
+            [:xdigit:]  任意十六进制数字(同[a-fA-F0-9])
+    匹配多个实例
+        *     0个或多个匹配
+        +     1个或多个匹配 {1,}
+        ？    0个或1个匹配 {0,1}
+        {n}   指定数目的匹配
+        {n,}  不少于指定数目的匹配
+        {n,m} 匹配数目的范围（m不超过255）
+    定位符
+       ^          文本的开始   (^如在[]中不来表示否定该集合)
+       $          文本的结尾
+       [[:<:]]    词的开始
+       [[:>:]]    词的结尾
+
+创建计算字段
+    字段基本上与列的意思相同，经常互换使用，不过数据库存列一般称为列，而术语字段通常用在计算字段的连接上
+    
+    拼接字段
+    concat() 函数可用来拼接多个列或字符。（其他数据库系统多使用+或||来实现拼接
+    select concat(colName1,'str',colName2,'str') from tableName;
+            就可以把两列和额外添加的字符合成新的一列，一般需要给新一列起别名，
+            在concat() as newColname 就可以 别名，有时也称为导出列
+    rtrim()  函数去掉值右边的所有空格
+    ltrim()  函数去掉左边的所有空格
+    trim()   函数去掉左右两边的空格
+
+    执行算术计算
+    +   加
+    -   减
+    *   乘
+    /   除      同样，也可以用 as 对导出的列起别名
+
+使用数据处理函数
+    函数的移植性比较差，当你决定使用函数的时候，要做好代码的注释工作！
+    upper()     将文本转换为大写
+    left()      返回串左边的字符
+    length()    返回串的长度
+    locate()    找出串的一个子串
+    lower()     将串转换为小写
+    ltrim()     去掉串左边的空格
+    right()     返回串右边的字符
+    rtrim()     去掉串右边的空格
+    soundex()   返回串的soundex值 （是一个将任何文本串转换为描述其语音表示的字母模式的算法，
+                考虑了类似的发音字符和音节，使得能对串进行发音比较而不是字母比较，不是sql概念，但大多数据库都有）
+                select colName from tableName where soundex(colName)=soundex(str)； 要先把要检索子句的列称soundex,条件也要soundex
+    subsbring() 返回子串的字符
+    upper()     将串转换为大写
+
+    日期和时间 的处理函数
+        adddate()        增加一个日期（天，周等）
+        addtime()        增加一个时间（时，分等）
+        curdate()        返回当前日期
+        curtime()        返回当前时间 
+        date()           返回日期时间 的日期部分
+        datediff()       计算两个日期之差
+        date_add()       高度灵活的日期运算函数
+        date_formate()   返回一个格式化的日期或时间串
+        day()            返回一个日期的天数部分
+        dayofweek()      对于一个日期，返回对应的星期几
+        hour()           返回一个时间的小时部分
+        minute()         返回一个时间的分钟部分
+        month()          返回一个日期的月份部分
+        now()            返回当前日期和时间 
+        second()         返回一个时间秒部分
+        time()           返回一个日期时间 的时间部分
+        year()           返回一个日期的年份部分
+        where子句进行过虑时必须注意，日期格式必须为：yyyy-mm-dd 
+        有时入库的数据是包括日期和时间的，此时就需要取出日期部份进入匹配，才更可靠，不会失败
+        尽量想要的仅是日期时都使用date() 是一个好习惯，即使相应的列只包含日期也是如此。时间的话就用time()
+
+        如果需要匹配月公示的话，可以有几种方法：
+        1，select colName from tableName where  date(colName) between '2017-09-01' and '2017-09-30'; 这样需要记每个月有多少天和闰年2月，比较麻烦
+        2，select colName from tableName where year(colName)=2017 and month(colName)=9;  这样和上面一样，可以检索出九月的数据
+
+        数值处理函数
+            abs()       返回一个数的绝对值
+            cos()       返回一个角度的余弦
+            exp()       返回一个数的指数值
+            mod()       返回除操作的余数
+            pi()        返回圆周率
+            rand()      返回一个随机数
+            sin()       返回一个角度的正弦
+            sqrt()      返回一个数的平方根
+            tan()       返回一个角度的正切
+
+汇总数据
+    avg()       通过对表中行数计数并计算特定列值之和，求得该列的平均值。（也可以返回特定的列或行的平均值）
+                select avg(colName) as xxx from tableName where .....;
+                avg只能用来确定特定数值列的平均值，而列名必须作为函数的参数给出。多个列的平均值，要用多个avg函数
+                忽略null行
+
+    count()    进行计数，可利用count()确定表中行的数目或符合特定条件的行的数目
+               count(*) 对表中行的数目进行计数，不管表列中包含的是空值(null)还是非空值
+               使用count(colName) 对特定列中具有的行进行计数，忽略null值
+    max()      返回指定列中的最有值，max()要求指定列名    对非数值数据使用max()函数，返文本列中的(排序)最大值
+               忽然null行
+               
+    min()       返回指定列的最小值，要求指定列名。(特性同上)
+ 
+    sum()       返回指定列值的和(总计)    忽烈列值为null的行
+
+    聚集不同值
+
+
+
+
+
+
+
+
+
+
+ 
+
+
