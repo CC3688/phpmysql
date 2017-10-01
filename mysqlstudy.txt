@@ -211,17 +211,81 @@
  
     sum()       返回指定列值的和(总计)    忽烈列值为null的行
 
-    聚集不同值
+    聚集不同值   all是默认参数， 只包含不同的值，指定distinct参数
+    select avg(distinct colName) from tableName where ....
+            distinct 只能用于count()（有指定列名的），
+                     不能用于count(*)
+            distinct 可以用于max 和min   但没有意义，一个列中的最小值和最有值不管是否包含不同值都是相同的
+
+    组合聚集函数
+        select语名，聚集函数可以根据需要包含多个聚集函数。  结果 用as 取别名
+        在指定别名以包含某个聚集函数的结果时，不应使用表中实际的列名，虽然这样做并非不合法，
+        但使用唯一的名字会使用你的sql更易更和使用
+
+分组数据        
+    分组允许把数组分为多个逻辑组，以便能对每个组进行聚集计算。分组是在select语句中的group by 子句建立的。
+    group by 子句必须出现在where子句之后，order by 子句之前。
+
+    过滤分组，不使用where,因为mysql 为此提供了另外的子句，那就是having子句，它与where非常类似。事实上，之前学过
+    的所有类型的where子句都可以用having来替代。唯一的差别是where过滤行。而having过滤分组。
+
+    有时where 和having 要同时使用
+    select vend_id,count(*) as num_prods 
+    from products where prod_price>=10
+    group by vend_id 
+    having count(*)>=2;
+        这条语句，第一行使用了聚集函数的基本select，它与前面的例子很像。where子句过滤所有prod_price至少为10
+        的行。然后按vend_id分组数据，having子句过滤计数为2或以上的分组。(如果没有where子句，将会多检索出两行)
+    
+    分组 和 排序  group by 和 order by  经常完成相同的工作，但却非常不同
+    order by  排序产生的输出
+              任意列都可以使用（甚至非选择的列也可以使用）  
+              不一定需要
+    group by  分组行。但输出可能不是分组的顺序   
+              只可能使用选择列或表达式，而且必须使用每个选择列表达式   
+              如果与聚集函数一起使用（或表达式），则必须使用
+    一般使用group by子句时，应该也给出order by 子句。这样是保证数据正确排序的唯一方法。
+    千万不要仅依靠group by 排序数据。
+    
+    select 子句顺序
+
+    子句           说明             是否必须使用
+    select    要返回的列或表达式     是
+    from      从中检索数据的表      仅在从表选择数据时使用
+    where     行级过滤             否
+    group by  分组说明             仅在按组计算聚集时使用
+    having    组级过滤             否
+    order by  输出排序顺序          否
+    limit     要检索的行数         否
+
+使用子查询
+    任何sql语句都是查询，但此术语一般指select语句。
+    子查询，就是嵌套在其他查询中的查询。
+    利用子查询进行过滤
+        select语句中，子查询总是从内向外处理的。
+        子查询一般与 in 操作符结合使用，但也可以用于测试等于= 不等于<>等
+    作为计算字段使用子查询
 
 
+联结表        
+    外键：某个表中的一列，它包含另一个表的主键值，定义了两个表之间的关系
+    select colName1 ,colName2 from tableName1 ,tableName2 
+        where tableName1.xxx=tableName2.xxx order by colName;
+    从两个表，选择需要的列，通过外键 条件过滤 得出要想到结果 表联结 （等值联结，也叫内部联结）
+        是通过完全限定列名    可以避免在引用列可能出现二义性时出出错误
 
+    笛卡儿积 由没有联结条件的表关系返回的结果为笛卡儿积，检索出的行的数目将
+            是第一个表中的行数乘以第二个表中的行数  （没有实用性的联结）
+    select colName1 ,colName2 from tableName1 inner join tableName2
+        on tableName1.xxx=tableName2.xxx;
 
+    ANSI SQL 规范 首选 inner join
 
+    联结表，不仅可以联结两个，sql对一条select语名中可以联结的表的数目没有限制。
+    但联结得越多，性能下降越厉害
 
-
-
-
-
+创建高级联结
+    115
  
 
 
