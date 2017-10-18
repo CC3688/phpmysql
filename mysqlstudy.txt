@@ -285,7 +285,14 @@
     但联结得越多，性能下降越厉害
 
 创建高级联结
-    115
+    1.使用别名
+       select concat(colName1,colName2) as alias(别名) from tableName where ...
+       别名可以用于列名和计算字段 ，还可以给表名起别名 这样做 可以缩短sql语句，允许单条select
+       语句中多次使用要同的表
+    2.使用不同类型的联结
+
+    107
+      
  
 
 
